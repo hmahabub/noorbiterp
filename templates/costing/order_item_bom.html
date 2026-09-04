@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Order BOM · {{ order_item.item.buyer_style }}{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-diagram-3"></i> Order BOM &amp; Costing — {{ order_item.item.buyer_style }}</h1>
+  <a href="{% url 'orders:detail' order_item.order.pk %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Order
+  </a>
+</div>
+
+<p class="text-muted">
+  Order qty for this line: <strong>{{ order_item.qty }}</strong> —
+  quantities below are auto-scaled from the style's standard BOM (per-unit consumption + wastage x order qty).
+</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="erp-card kpi-card kpi-red">
+      <div class="kpi-value">{{ total_material_cost|floatformat:2 }}</div>
+      <div class="kpi-label">Total Material Cost</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="erp-card kpi-card kpi-green">
+      <div class="kpi-value">{{ revenue|floatformat:2 }}</div>
+      <div class="kpi-label">Line Revenue</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="erp-card kpi-card {% if estimated_margin >= 0 %}kpi-green{% else %}kpi-red{% endif %}">
+      <div class="kpi-value">{{ estimated_margin|floatformat:2 }}</div>
+      <div class="kpi-label">Estimated Margin (before CM)</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0">Add a Material</h6>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_line">
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-erp-primary mt-2 w-100">
+          <i class="bi bi-plus-lg"></i> Add to this Line's BOM
+        </button>
+      </form>
+      <p class="text-muted small mt-2 mb-0">
+        This is on top of whatever was cloned from the style's
+        <a href="{% url 'costing:standard_bom' order_item.item.pk %}" target="_blank">standard BOM</a> —
+        useful for order-specific extras or substitutions.
+      </p>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="erp-card">
+      <div class="table-responsive">
+        <table class="table erp-table mb-0">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Item</th>
+              <th class="text-end">Consumption /unit</th>
+              <th>Unit</th>
+              <th class="text-end">Wastage %</th>
+              <th class="text-end">Total Qty</th>
+              <th class="text-end">Unit Price</th>
+              <th class="text-end">Line Cost</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in bom_lines %}
+            <tr>
+              <td colspan="9" class="p-0 border-0">
+                <details>
+                  <summary class="p-2" style="cursor:pointer;list-style:none;">
+                    <table class="w-100 mb-0" style="table-layout:fixed;">
+                      <tr>
+                        <td style="width:11%">{{ line.get_category_display }}</td>
+                        <td style="width:19%">{{ line.item.description }}<div class="text-muted small">{{ line.item.supplier_code }}</div></td>
+                        <td style="width:12%" class="text-end">{{ line.consumption|floatformat:4 }}</td>
+                        <td style="width:7%">{{ line.get_unit_display }}</td>
+                        <td style="width:9%" class="text-end">{{ line.wastage_percent|floatformat:2 }}%</td>
+                        <td style="width:13%" class="text-end fw-semibold">{{ line.total_qty|floatformat:2 }}</td>
+                        <td style="width:11%" class="text-end">{{ line.unit_price|floatformat:4 }}</td>
+                        <td style="width:13%" class="text-end fw-semibold">{{ line.line_cost|floatformat:2 }}</td>
+                        <td style="width:5%" class="text-end">
+                          <i class="bi bi-pencil-square"></i>
+                          <a href="{% url 'costing:remove_order_item_bom_line' order_item.pk line.pk %}" class="text-danger ms-1"
+                             data-confirm="Remove this material from this order line's BOM?" onclick="event.stopPropagation();">
+                            <i class="bi bi-trash"></i>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </summary>
+                  <form method="post" class="d-flex align-items-end flex-wrap gap-2 p-3" style="background:#f8fafc;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_line">
+                    <input type="hidden" name="line_id" value="{{ line.pk }}">
+                    {{ line.edit_form|crispy }}
+                    <button type="submit" class="btn btn-sm btn-erp-primary mb-3">
+                      <i class="bi bi-check-lg"></i> Save
+                    </button>
+                  </form>
+                </details>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" class="text-center text-muted py-4">No BOM lines yet — the standard BOM had none, or this style has no standard BOM set up.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var itemSelect = document.getElementById('id_item');
+  var priceInput = document.getElementById('id_unit_price');
+  var categorySelect = document.getElementById('id_category');
+  var unitSelect = document.getElementById('id_unit');
+  if (itemSelect) {
+    itemSelect.addEventListener('change', function () {
+      var opt = itemSelect.options[itemSelect.selectedIndex];
+      var price = opt.getAttribute('data-price');
+      var unit = opt.getAttribute('data-unit');
+      var category = opt.getAttribute('data-category');
+      if (price && priceInput) priceInput.value = price;
+      if (unit && unitSelect) unitSelect.value = unit;
+      if (category && categorySelect) categorySelect.value = category;
+    });
+  }
+});
+</script>
+{% endblock %}

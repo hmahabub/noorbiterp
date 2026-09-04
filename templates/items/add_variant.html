@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Add Variants · {{ finished_item.buyer_style }}{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-palette"></i> Add Variants — {{ finished_item.buyer_style }}</h1>
+  <a href="{% url 'items:finished_detail' finished_item.pk %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Item
+  </a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0">Add a Color / Size</h6>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-erp-primary mt-2 w-100">
+          <i class="bi bi-plus-lg"></i> Add Variant
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="erp-card">
+      <div class="table-responsive">
+        <table class="table erp-table mb-0">
+          <thead>
+            <tr><th>SKU</th><th>Color</th><th>Size</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for v in variants %}
+            <tr>
+              <td>{{ v.sku }}</td>
+              <td>{{ v.color_name }}</td>
+              <td>{{ v.size }}</td>
+              <td>{{ v.get_status_display }}</td>
+              <td class="text-end">
+                <a href="{% url 'items:finished_remove_variant' finished_item.pk v.pk %}" class="text-danger"
+                   data-confirm="Remove this variant?">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No variants added yet — use the form to add the first one.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if variants %}
+    <div class="d-flex justify-content-end mt-3">
+      <a href="{% url 'items:finished_detail' finished_item.pk %}" class="btn btn-erp-primary">
+        <i class="bi bi-check2-circle"></i> Done
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-speedometer2"></i> MD / GM Dashboard</h1>
+  <span class="text-muted small">{{ "now"|date:"l, d M Y" }}</span>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ active_buyers }}</div>
+      <div class="kpi-label">Active Buyers</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ running_orders }}</div>
+      <div class="kpi-label">Running Orders</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card kpi-red">
+      <div class="kpi-value">{{ urgent_orders_count }}</div>
+      <div class="kpi-label">Urgent Orders (overdue)</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card kpi-amber">
+      <div class="kpi-value">{{ pending_qc }}</div>
+      <div class="kpi-label">Pending QC</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card kpi-red">
+      <div class="kpi-value">{{ overdue_receivables_count }}</div>
+      <div class="kpi-label">Overdue Receivables</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card kpi-green">
+      <div class="kpi-value">{{ todays_shipments.count }}</div>
+      <div class="kpi-label">Today's Shipments</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card kpi-amber">
+      <div class="kpi-value">{{ critical_samples|length }}</div>
+      <div class="kpi-label">Critical Samples</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ lc_expiring_soon_count }}</div>
+      <div class="kpi-label">LC Expiring Soon</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="erp-card p-3">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-exclamation-triangle"></i> Urgent Orders (past ship date)</h6>
+      <div class="table-responsive">
+        <table class="table erp-table table-sm mb-0">
+          <thead><tr><th>Order</th><th>Buyer</th><th>Required Ship</th><th></th></tr></thead>
+          <tbody>
+            {% for order in urgent_orders %}
+            <tr>
+              <td><span class="status-dot red"></span>{{ order.order_number }}</td>
+              <td>{{ order.buyer }}</td>
+              <td>{{ order.required_ship_date }}</td>
+              <td class="text-end"><a href="{% url 'orders:detail' order.pk %}" class="btn btn-sm btn-outline-secondary">View</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No urgent orders. ✅</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="erp-card p-3">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-box-seam"></i> Critical Samples</h6>
+      <div class="table-responsive">
+        <table class="table erp-table table-sm mb-0">
+          <thead><tr><th>PO Number</th><th>Buyer</th><th>Submission Due</th><th></th></tr></thead>
+          <tbody>
+            {% for sample in critical_samples %}
+            <tr>
+              <td><span class="status-dot amber"></span>{{ sample.po_number }}</td>
+              <td>{{ sample.buyer }}</td>
+              <td>{{ sample.submission_date }}</td>
+              <td class="text-end"><a href="{% url 'samples:detail' sample.pk %}" class="btn btn-sm btn-outline-secondary">View</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No critical samples. ✅</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="erp-card p-3">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-cash-coin"></i> Overdue Receivables</h6>
+      <div class="table-responsive">
+        <table class="table erp-table table-sm mb-0">
+          <thead><tr><th>Order</th><th>Buyer</th><th>Amount</th><th>Due</th></tr></thead>
+          <tbody>
+            {% for c in overdue_receivables %}
+            <tr>
+              <td>{{ c.order }}</td>
+              <td>{{ c.buyer }}</td>
+              <td>{{ c.outstanding }} {{ c.currency }}</td>
+              <td>{{ c.due_date }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">Nothing overdue. ✅</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="erp-card p-3">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-clock-history"></i> Recently Created Orders</h6>
+      <div class="table-responsive">
+        <table class="table erp-table table-sm mb-0">
+          <thead><tr><th>Order</th><th>Buyer</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for order in recent_orders %}
+            <tr>
+              <td>
+                <span class="status-dot {{ order.shipment_status_color }}"></span>
+                {{ order.order_number }}
+              </td>
+              <td>{{ order.buyer }}</td>
+              <td>{{ order.get_status_display }}</td>
+              <td class="text-end"><a href="{% url 'orders:detail' order.pk %}" class="btn btn-sm btn-outline-secondary">View</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No orders yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Standard BOM · {{ finished_item.buyer_style }}{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-diagram-3"></i> Standard BOM &amp; Costing — {{ finished_item.buyer_style }}</h1>
+  <a href="{% url 'items:finished_detail' finished_item.pk %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Item
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ standard_cost|floatformat:4 }}</div>
+      <div class="kpi-label">Standard Cost / Unit</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ reference_price|floatformat:4 }}</div>
+      <div class="kpi-label">Reference FOB Price</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="erp-card kpi-card {% if implied_margin >= 0 %}kpi-green{% else %}kpi-red{% endif %}">
+      <div class="kpi-value">{{ implied_margin|floatformat:4 }}</div>
+      <div class="kpi-label">Implied Margin / Unit</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0">Add a Material</h6>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_line">
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-erp-primary mt-2 w-100">
+          <i class="bi bi-plus-lg"></i> Add to BOM
+        </button>
+      </form>
+      <p class="text-muted small mt-2 mb-0">
+        Don't see the material you need? <a href="{% url 'items:create' %}" target="_blank">Add a new Item</a> to the raw material catalogue first.
+      </p>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="erp-card">
+      <div class="table-responsive">
+        <table class="table erp-table mb-0">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Item</th>
+              <th class="text-end">Consumption</th>
+              <th>Unit</th>
+              <th class="text-end">Wastage %</th>
+              <th class="text-end">Total Qty</th>
+              <th class="text-end">Unit Price</th>
+              <th class="text-end">Line Cost</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in bom_lines %}
+            <tr>
+              <td colspan="9" class="p-0 border-0">
+                <details>
+                  <summary class="p-2" style="cursor:pointer;list-style:none;">
+                    <table class="w-100 mb-0" style="table-layout:fixed;">
+                      <tr>
+                        <td style="width:11%">{{ line.get_category_display }}</td>
+                        <td style="width:20%">{{ line.item.description }}<div class="text-muted small">{{ line.item.supplier_code }}</div></td>
+                        <td style="width:12%" class="text-end">{{ line.consumption|floatformat:4 }}</td>
+                        <td style="width:8%">{{ line.get_unit_display }}</td>
+                        <td style="width:10%" class="text-end">{{ line.wastage_percent|floatformat:2 }}%</td>
+                        <td style="width:12%" class="text-end fw-semibold">{{ line.total_qty|floatformat:4 }}</td>
+                        <td style="width:11%" class="text-end">{{ line.unit_price|floatformat:4 }}</td>
+                        <td style="width:11%" class="text-end fw-semibold">{{ line.line_cost|floatformat:4 }}</td>
+                        <td style="width:5%" class="text-end">
+                          <i class="bi bi-pencil-square"></i>
+                          <a href="{% url 'costing:remove_standard_bom_line' finished_item.pk line.pk %}" class="text-danger ms-1"
+                             data-confirm="Remove this material from the standard BOM?" onclick="event.stopPropagation();">
+                            <i class="bi bi-trash"></i>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </summary>
+                  <form method="post" class="d-flex align-items-end flex-wrap gap-2 p-3" style="background:#f8fafc;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_line">
+                    <input type="hidden" name="line_id" value="{{ line.pk }}">
+                    {{ line.edit_form|crispy }}
+                    <button type="submit" class="btn btn-sm btn-erp-primary mb-3">
+                      <i class="bi bi-check-lg"></i> Save
+                    </button>
+                  </form>
+                </details>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" class="text-center text-muted py-4">No BOM lines yet — use the form to add the first material.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var itemSelect = document.getElementById('id_item');
+  var priceInput = document.getElementById('id_unit_price');
+  var categorySelect = document.getElementById('id_category');
+  var unitSelect = document.getElementById('id_unit');
+  if (itemSelect) {
+    itemSelect.addEventListener('change', function () {
+      var opt = itemSelect.options[itemSelect.selectedIndex];
+      var price = opt.getAttribute('data-price');
+      var unit = opt.getAttribute('data-unit');
+      var category = opt.getAttribute('data-category');
+      if (price && priceInput) priceInput.value = price;
+      if (unit && unitSelect) unitSelect.value = unit;
+      if (category && categorySelect) categorySelect.value = category;
+    });
+  }
+});
+</script>
+{% endblock %}

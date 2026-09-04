@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ finished_item.buyer_style }} · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-tags"></i> {{ finished_item.buyer_style }} — {{ finished_item.description }}</h1>
+  <div>
+    <a href="{% url 'items:finished_update' finished_item.pk %}" class="btn btn-outline-primary">
+      <i class="bi bi-pencil"></i> Edit
+    </a>
+    <a href="{% url 'items:finished_add_variant' finished_item.pk %}" class="btn btn-erp-primary">
+      <i class="bi bi-plus-lg"></i> Manage Variants
+    </a>
+    <a href="{% url 'costing:standard_bom' finished_item.pk %}" class="btn btn-outline-primary">
+      <i class="bi bi-diagram-3"></i> Standard BOM &amp; Costing
+    </a>
+    <a href="{% url 'items:finished_list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to list
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="erp-card p-4">
+      <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">Type</dt>
+        <dd class="col-sm-8">{{ finished_item.get_type_display }}</dd>
+
+        <dt class="col-sm-4 text-muted">Buyer Style</dt>
+        <dd class="col-sm-8">{{ finished_item.buyer_style }}</dd>
+
+        <dt class="col-sm-4 text-muted">Description</dt>
+        <dd class="col-sm-8">{{ finished_item.description }}</dd>
+
+        <dt class="col-sm-4 text-muted">Content</dt>
+        <dd class="col-sm-8">{{ finished_item.content|linebreaksbr|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Finish</dt>
+        <dd class="col-sm-8">{{ finished_item.finish|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Unit Price</dt>
+        <dd class="col-sm-8">{{ finished_item.unit_price }}</dd>
+
+        <dt class="col-sm-4 text-muted">Standard BOM Cost</dt>
+        <dd class="col-sm-8">
+          {{ finished_item.standard_bom_cost|floatformat:4 }}
+          <a href="{% url 'costing:standard_bom' finished_item.pk %}" class="ms-2 small">view / edit</a>
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="erp-card">
+      <div class="table-responsive">
+        <table class="table erp-table mb-0">
+          <thead>
+            <tr><th>SKU</th><th>Color</th><th>Size</th><th>Status</th><th>Active</th></tr>
+          </thead>
+          <tbody>
+            {% for v in variants %}
+            <tr>
+              <td>{{ v.sku }}</td>
+              <td>{{ v.color_name }}</td>
+              <td>{{ v.size }}</td>
+              <td>{{ v.get_status_display }}</td>
+              <td>{% if v.is_active %}<span class="status-dot green"></span>Yes{% else %}<span class="status-dot red"></span>No{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No variants yet — click "Manage Variants" to add color/size combinations.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

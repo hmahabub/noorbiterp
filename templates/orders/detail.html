@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}{{ order.our_order_number }} · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1>
+    <i class="bi bi-clipboard-check"></i> {{ order.our_order_number }}
+    <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+  </h1>
+  <div>
+    <a href="{% url 'orders:update' order.pk %}" class="btn btn-outline-primary">
+      <i class="bi bi-pencil"></i> Edit
+    </a>
+    <a href="{% url 'orders:add_item' order.pk %}" class="btn btn-outline-secondary">
+      <i class="bi bi-list-ul"></i> Manage Items
+    </a>
+    <a href="{% url 'orders:list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to list
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="erp-card p-4 mb-4">
+      <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">Buyer</dt>
+        <dd class="col-sm-8">{{ order.buyer }}</dd>
+
+        <dt class="col-sm-4 text-muted">Buyer PO Number</dt>
+        <dd class="col-sm-8">{{ order.buyer_order_number|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Ship To</dt>
+        <dd class="col-sm-8">{{ order.ship_to|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Factory</dt>
+        <dd class="col-sm-8">{{ order.factory|default:"Not yet assigned" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Order Type</dt>
+        <dd class="col-sm-8">{{ order.get_order_type_display }}</dd>
+
+        <dt class="col-sm-4 text-muted">Currency</dt>
+        <dd class="col-sm-8">{{ order.currency }}</dd>
+
+        <dt class="col-sm-4 text-muted">Booking Date</dt>
+        <dd class="col-sm-8">{{ order.booking_date|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Confirmed Date</dt>
+        <dd class="col-sm-8">{{ order.confirmed_date|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Required Ship Date</dt>
+        <dd class="col-sm-8">
+          <span class="status-dot {{ order.shipment_status_color }}"></span>
+          {{ order.required_ship_date|default:"—" }}
+        </dd>
+
+        <dt class="col-sm-4 text-muted">Planned Ship Date</dt>
+        <dd class="col-sm-8">{{ order.planned_ship_date|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Terms &amp; Conditions</dt>
+        <dd class="col-sm-8">{{ order.terms_and_conditions|linebreaksbr|default:"—" }}</dd>
+      </dl>
+    </div>
+
+    {% for oi in order_items %}
+    <div class="erp-card mb-3">
+      <div class="p-3 d-flex justify-content-between align-items-center" style="border-bottom:1px solid var(--erp-card-border);">
+        <div>
+          <strong>{{ oi.item.buyer_style }}</strong> — {{ oi.item.description }}
+          <div class="text-muted small">Pack {{ oi.pack }} · Qty {{ oi.qty }} · Unit Price {{ oi.unit_price|floatformat:4 }} · Line Total {{ oi.line_total|floatformat:2 }}</div>
+        </div>
+        <div class="text-end">
+          {% if oi.breakdown_balanced %}
+            <span class="badge bg-success">Breakdown balanced</span>
+          {% else %}
+            <span class="badge bg-warning text-dark">Breakdown {{ oi.breakdown_qty }} / {{ oi.qty }}</span>
+          {% endif %}
+          <a href="{% url 'orders:add_item' order.pk %}#item-{{ oi.pk }}" class="btn btn-sm btn-outline-secondary ms-2">
+            <i class="bi bi-palette"></i> Manage Quantities
+          </a>
+          <a href="{% url 'costing:order_item_bom' oi.pk %}" class="btn btn-sm btn-outline-primary ms-1">
+            <i class="bi bi-diagram-3"></i> BOM &amp; Costing
+          </a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table erp-table table-sm mb-0">
+          <thead>
+            <tr><th>SKU</th><th>Color</th><th>Size</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Line Total</th></tr>
+          </thead>
+          <tbody>
+            {% for line in oi.nonzero_breakdown %}
+            <tr>
+              <td>{{ line.variant.sku }}</td>
+              <td>{{ line.variant.color_name }}</td>
+              <td>{{ line.variant.size }}</td>
+              <td class="text-end">{{ line.qty }}</td>
+              <td class="text-end">{{ line.unit_price|floatformat:4 }}</td>
+              <td class="text-end">{{ line.line_total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No color/size breakdown yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% empty %}
+    <div class="erp-card p-4 text-center text-muted">
+      No items on this order yet.
+      <a href="{% url 'orders:add_item' order.pk %}">Add the first item</a>.
+    </div>
+    {% endfor %}
+
+    {% if order_items %}
+    <div class="erp-card p-3 d-flex justify-content-end">
+      <div class="text-end">
+        <div class="text-muted small">Total Qty: {{ total_qty }}</div>
+        <div class="text-muted small">Material Cost: {{ order.total_bom_cost|floatformat:2 }} · Est. Margin: {{ order.estimated_margin|floatformat:2 }}</div>
+        <div class="fw-bold" style="color: var(--erp-navy); font-size: 1.1rem;">Total: {{ total_amount|floatformat:2 }} {{ order.currency }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-4">
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-paperclip"></i> Attached Documents</h6>
+      {% if documents %}
+        <ul class="list-group list-group-flush">
+          {% for doc in documents %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <a href="{{ doc.file.url }}" target="_blank">{{ doc.get_doc_type_display }}</a>
+            <a href="{% url 'documents:delete' doc.pk %}" class="text-danger" data-confirm="Remove this document?">
+              <i class="bi bi-trash"></i>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted small">No documents uploaded yet.</p>
+      {% endif %}
+      <a href="{% url 'documents:upload' content_type_id order.pk %}" class="btn btn-sm btn-erp-primary mt-3 w-100">
+        <i class="bi bi-upload"></i> Upload Document
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

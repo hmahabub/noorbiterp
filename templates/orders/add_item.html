@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Add Items · {{ order.our_order_number }}{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-list-ul"></i> Add Items — {{ order.our_order_number }}</h1>
+  <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Order
+  </a>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-5">
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0">1. Add a Style</h6>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_item">
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-erp-primary mt-2 w-100">
+          <i class="bi bi-plus-lg"></i> Add to Order
+        </button>
+      </form>
+      <p class="text-muted small mt-2 mb-0">
+        Don't see the style you need? <a href="{% url 'items:finished_create' %}" target="_blank">Add a new Finished Item</a> first.
+      </p>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="erp-card p-4 h-100 d-flex flex-column justify-content-center">
+      <h6 class="erp-section-title mt-0">2. Fill in Quantities</h6>
+      <p class="text-muted small mb-0">
+        Once a style is added, every color/size combination appears below as a grid — colors
+        down the side, sizes across the top. Type quantities directly into the grid and press
+        any <strong>Save</strong> to save the whole row set at once.
+      </p>
+    </div>
+  </div>
+</div>
+
+<h6 class="erp-section-title">Items on this Order</h6>
+
+{% for oi in order_items %}
+<div class="erp-card mb-3" id="item-{{ oi.pk }}">
+  <div class="p-3 d-flex justify-content-between align-items-start flex-wrap gap-2" style="border-bottom:1px solid var(--erp-card-border);">
+    <div class="flex-grow-1">
+      <strong>{{ oi.item.buyer_style }}</strong> — {{ oi.item.description }}
+      <details class="mt-1">
+        <summary class="text-muted small" style="cursor:pointer;">
+          Pack {{ oi.pack }} · Qty {{ oi.qty }} · Unit Price {{ oi.unit_price|floatformat:4 }} · Line Total {{ oi.line_total|floatformat:2 }}
+          <i class="bi bi-pencil-square ms-1" title="Edit"></i>
+        </summary>
+        <form method="post" class="d-flex align-items-end flex-wrap gap-2 mt-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="edit_item">
+          <input type="hidden" name="order_item_id" value="{{ oi.pk }}">
+          {{ oi.edit_form|crispy }}
+          <button type="submit" class="btn btn-sm btn-erp-primary mb-3">
+            <i class="bi bi-check-lg"></i> Save
+          </button>
+        </form>
+      </details>
+    </div>
+    <div class="text-end">
+      {% if oi.breakdown_balanced %}
+        <span class="badge bg-success grid-balance-badge">Breakdown balanced ({{ oi.breakdown_qty }}/{{ oi.qty }})</span>
+      {% else %}
+        <span class="badge bg-warning text-dark grid-balance-badge">Breakdown {{ oi.breakdown_qty }} / {{ oi.qty }}</span>
+      {% endif %}
+      <a href="{% url 'costing:order_item_bom' oi.pk %}" class="btn btn-sm btn-outline-primary ms-2">
+        <i class="bi bi-diagram-3"></i> BOM &amp; Costing
+      </a>
+      <a href="{% url 'orders:remove_item' order.pk oi.pk %}" class="text-danger ms-2"
+         data-confirm="Remove this item and its color/size breakdown from the order?">
+        <i class="bi bi-trash"></i>
+      </a>
+    </div>
+  </div>
+
+  {% if oi.matrix.rows %}
+  <form method="post" class="size-grid-form" data-target-qty="{{ oi.qty }}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_grid">
+    <input type="hidden" name="order_item_id" value="{{ oi.pk }}">
+    <div class="table-responsive">
+      <table class="table erp-table table-sm mb-0 size-grid-table">
+        <thead>
+          <tr>
+            <th>Color</th>
+            {% for size in oi.matrix.sizes %}<th class="text-center">{{ size }}</th>{% endfor %}
+            <th class="text-center">Row Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in oi.matrix.rows %}
+          <tr>
+            <td class="fw-semibold">{{ row.color }}</td>
+            {% for cell in row.cells %}
+              <td class="text-center">
+                {% if cell.variant %}
+                  <input type="number" min="0" step="1" class="form-control form-control-sm text-center size-grid-input"
+                         name="qty_{{ cell.breakdown.pk }}" value="{{ cell.breakdown.qty }}" data-col="{{ forloop.counter0 }}">
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+            <td class="text-center fw-semibold row-total">0</td>
+            <td class="text-end">
+              <button type="submit" class="btn btn-sm btn-erp-primary">Save</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th>Column Total</th>
+            {% for size in oi.matrix.sizes %}<th class="text-center col-total" data-col="{{ forloop.counter0 }}">0</th>{% endfor %}
+            <th class="text-center grand-total">0</th>
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </form>
+  {% else %}
+  <p class="text-muted small p-3 mb-0">
+    No active variants exist for {{ oi.item.buyer_style }} yet.
+    <a href="{% url 'items:finished_add_variant' oi.item.pk %}" target="_blank">Add color/size variants to this Finished Item</a>, then refresh this page.
+  </p>
+  {% endif %}
+</div>
+{% empty %}
+<div class="erp-card p-4 text-center text-muted">
+  No items added yet — use the form above to add the first style.
+</div>
+{% endfor %}
+
+{% if order_items %}
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <div class="text-muted small">Order Total: <strong>{{ total_amount|floatformat:2 }} {{ order.currency }}</strong></div>
+  <a href="{% url 'orders:detail' order.pk %}" class="btn btn-erp-primary">
+    <i class="bi bi-check2-circle"></i> Done — Review Order
+  </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var itemSelect = document.getElementById('id_item');
+  var priceInput = document.getElementById('id_unit_price');
+  if (itemSelect) {
+    itemSelect.addEventListener('change', function () {
+      var opt = itemSelect.options[itemSelect.selectedIndex];
+      var price = opt.getAttribute('data-price');
+      if (price && priceInput) {
+        priceInput.value = price;
+      }
+    });
+  }
+
+  // Live row/column/grand totals as quantities are typed, purely a
+  // client-side preview — the server recalculates everything on Save.
+  document.querySelectorAll('.size-grid-form').forEach(function (form) {
+    var table = form.querySelector('.size-grid-table');
+    var inputs = Array.prototype.slice.call(table.querySelectorAll('.size-grid-input'));
+    var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr'));
+    var colTotals = Array.prototype.slice.call(table.querySelectorAll('.col-total'));
+    var grandTotalEl = table.querySelector('.grand-total');
+    var targetQty = parseInt(form.getAttribute('data-target-qty'), 10) || 0;
+
+    function recalc() {
+      var grand = 0;
+      var perCol = colTotals.map(function () { return 0; });
+
+      rows.forEach(function (row) {
+        var rowInputs = Array.prototype.slice.call(row.querySelectorAll('.size-grid-input'));
+        var rowTotal = 0;
+        rowInputs.forEach(function (input) {
+          var val = parseInt(input.value, 10) || 0;
+          var colIndex = parseInt(input.getAttribute('data-col'), 10) || 0;
+          rowTotal += val;
+          perCol[colIndex] = (perCol[colIndex] || 0) + val;
+        });
+        var rowTotalEl = row.querySelector('.row-total');
+        if (rowTotalEl) rowTotalEl.textContent = rowTotal;
+        grand += rowTotal;
+      });
+
+      colTotals.forEach(function (el, i) { el.textContent = perCol[i] || 0; });
+      if (grandTotalEl) grandTotalEl.textContent = grand;
+    }
+
+    inputs.forEach(function (input) {
+      input.addEventListener('input', recalc);
+    });
+    recalc();
+  });
+});
+</script>
+{% endblock %}

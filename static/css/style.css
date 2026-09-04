@@ -1,0 +1,257 @@
+:root {
+  --erp-navy: #10233f;
+  --erp-navy-dark: #0a1830;
+  --erp-teal: #0f8b8d;
+  --erp-teal-dark: #0b6c6e;
+  --erp-amber: #e8a33d;
+  --erp-red: #c0392b;
+  --erp-green: #2c8a4b;
+  --erp-bg: #f4f6f9;
+  --erp-card-border: #e3e7ee;
+}
+
+body {
+  background-color: var(--erp-bg);
+  font-family: "Segoe UI", Roboto, -apple-system, sans-serif;
+  color: #1c2733;
+}
+
+/* ---------- Navbar ---------- */
+.erp-navbar {
+  background-color: var(--erp-navy);
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.erp-navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: #fff;
+}
+.erp-navbar .navbar-brand span {
+  color: var(--erp-amber);
+}
+.erp-navbar .nav-link {
+  color: rgba(255,255,255,.85) !important;
+  font-size: .92rem;
+  font-weight: 500;
+}
+.erp-navbar .nav-link:hover,
+.erp-navbar .nav-link:focus {
+  color: #fff !important;
+}
+.erp-navbar .dropdown-menu {
+  background-color: var(--erp-navy-dark);
+  border: none;
+  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+}
+.erp-navbar .dropdown-item {
+  color: rgba(255,255,255,.85);
+  font-size: .9rem;
+}
+.erp-navbar .dropdown-item:hover,
+.erp-navbar .dropdown-item:focus {
+  background-color: var(--erp-teal);
+  color: #fff;
+}
+.erp-navbar .dropdown-divider { border-color: rgba(255,255,255,.1); }
+.erp-badge-md {
+  background-color: var(--erp-amber);
+  color: #10233f;
+  font-weight: 600;
+}
+
+/* ---------- Page shell ---------- */
+.erp-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--erp-card-border);
+}
+.erp-page-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--erp-navy);
+  margin: 0;
+}
+
+/* ---------- Cards / KPIs ---------- */
+.erp-card {
+  background: #fff;
+  border: 1px solid var(--erp-card-border);
+  border-radius: .5rem;
+  box-shadow: 0 1px 3px rgba(16,35,63,.06);
+}
+.kpi-card {
+  padding: 1.1rem 1.25rem;
+  border-left: 4px solid var(--erp-teal);
+}
+.kpi-card .kpi-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--erp-navy);
+  line-height: 1;
+}
+.kpi-card .kpi-label {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6b7686;
+  margin-top: .35rem;
+}
+.kpi-card.kpi-red { border-left-color: var(--erp-red); }
+.kpi-card.kpi-amber { border-left-color: var(--erp-amber); }
+.kpi-card.kpi-green { border-left-color: var(--erp-green); }
+
+/* ---------- Status dots / badges ---------- */
+.status-dot {
+  display: inline-block;
+  width: .6rem;
+  height: .6rem;
+  border-radius: 50%;
+  margin-right: .4rem;
+}
+.status-dot.red { background: var(--erp-red); }
+.status-dot.yellow, .status-dot.amber { background: var(--erp-amber); }
+.status-dot.green { background: var(--erp-green); }
+
+/* ---------- Tables ---------- */
+.erp-table thead th {
+  background-color: var(--erp-navy);
+  color: #fff;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  border: none;
+  white-space: nowrap;
+}
+.erp-table tbody tr:hover { background-color: #eef3f8; }
+.erp-table td, .erp-table th { vertical-align: middle; }
+
+/* ---------- Buttons ---------- */
+.btn-erp-primary {
+  background-color: var(--erp-teal);
+  border-color: var(--erp-teal);
+  color: #fff;
+}
+.btn-erp-primary:hover {
+  background-color: var(--erp-teal-dark);
+  border-color: var(--erp-teal-dark);
+  color: #fff;
+}
+
+/* ---------- Login ---------- */
+.erp-login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--erp-navy) 0%, var(--erp-navy-dark) 100%);
+}
+.erp-login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: .6rem;
+  padding: 2.25rem 2rem;
+  box-shadow: 0 12px 32px rgba(0,0,0,.3);
+}
+
+/* ---------- Two-column form layout (crud/form.html) ---------- */
+/* Crispy-bootstrap5 renders each field as a direct <div class="mb-3"> (or
+   <div class="form-check mb-3"> for checkboxes) inside the form. Wrapping
+   that output in .form-grid lets every field size itself into a responsive
+   two-column layout without touching each app's forms.py. */
+.form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1.75rem;
+  row-gap: 0;
+}
+.form-grid > div {
+  flex: 1 1 calc(50% - 0.875rem);
+  min-width: 230px;
+  margin-bottom: 0.85rem !important;
+}
+/* Fields that need the full row: textareas, file inputs, and any field
+   explicitly marked with .form-field-full (see form template). */
+.form-grid > div:has(textarea),
+.form-grid > div:has(input[type="file"]),
+.form-grid > div.form-field-full {
+  flex-basis: 100%;
+}
+.form-grid textarea {
+  min-height: 4.2rem;
+}
+.form-grid .form-label {
+  margin-bottom: .25rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #445064;
+}
+.form-grid .form-control,
+.form-grid .form-select {
+  padding-top: .45rem;
+  padding-bottom: .45rem;
+}
+@media (max-width: 767.98px) {
+  .form-grid > div {
+    flex-basis: 100%;
+  }
+}
+
+.erp-form-card {
+  max-width: 980px;
+}
+.erp-form-actions {
+  border-top: 1px solid var(--erp-card-border);
+  margin-top: .5rem;
+  padding-top: 1rem;
+}
+
+.erp-section-title {
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #6b7686;
+  font-weight: 700;
+  margin: 1.5rem 0 .6rem;
+}
+
+/* ---------- Order size-curve grid (color x size) ---------- */
+.size-grid-table th, .size-grid-table td {
+  white-space: nowrap;
+}
+.size-grid-input {
+  width: 64px;
+  display: inline-block;
+  padding: .25rem .3rem;
+}
+.size-grid-table .row-total,
+.size-grid-table .col-total,
+.size-grid-table .grand-total {
+  color: var(--erp-navy);
+  font-weight: 700;
+}
+.size-grid-table tfoot th {
+  background-color: var(--erp-navy);
+  color: #fff;
+}
+.size-grid-table tfoot .col-total,
+.size-grid-table tfoot .grand-total {
+  color: #fff;
+}
+
+/* ---------- Print ---------- */
+/* Applied globally so any page's Ctrl+P / window.print() hides app chrome
+   (navbar, alerts) and only prints the intended content. */
+@media print {
+  .erp-navbar,
+  .alert,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}

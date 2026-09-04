@@ -1,0 +1,13 @@
+Django==6.1
+django-crispy-forms==2.7
+crispy-bootstrap5==2026.3
+reportlab==4.4.10
+
+
+# --- Optional, for the later phases described in the project plan ---
+# djangorestframework       # Phase 4: DRF API layer for dashboard/mobile
+# celery                    # Async/scheduled jobs (LC expiry, sample auto-archive via Celery Beat)
+# redis                     # Celery broker + cache backend
+# psycopg2-binary           # PostgreSQL driver (swap in for production, see settings.py)
+# django-storages           # S3-compatible file storage for documents
+# gunicorn                  # Production WSGI server

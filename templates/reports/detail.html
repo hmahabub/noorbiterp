@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ report.name }} · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-file-earmark-text"></i> {{ report.name }}</h1>
+  <div>
+    <span class="text-muted small me-3">Generated {{ generated_at }}</span>
+    <a href="{% url 'reports:list' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> All reports
+    </a>
+  </div>
+</div>
+
+<div class="erp-card">
+  <div class="table-responsive">
+    <table class="table erp-table mb-0">
+      {% if headers %}
+      <thead><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+      {% endif %}
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for value in row %}<td>{{ value }}</td>{% endfor %}
+        </tr>
+        {% empty %}
+        <tr><td class="text-center text-muted py-4">No data available for this report yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

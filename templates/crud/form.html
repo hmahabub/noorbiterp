@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{{ title }} · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-pencil-square"></i> {{ title }}</h1>
+  <a href="{% if url_names %}{% url url_names.list %}{% else %}javascript:history.back(){% endif %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Cancel
+  </a>
+</div>
+
+<div class="erp-card p-4 erp-form-card">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <div class="form-grid">
+      {{ form|crispy }}
+    </div>
+    <div class="erp-form-actions d-flex gap-2">
+      <button type="submit" class="btn btn-erp-primary"><i class="bi bi-check-lg"></i> Save</button>
+      <a href="{% if url_names %}{% url url_names.list %}{% else %}javascript:history.back(){% endif %}" class="btn btn-outline-secondary">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

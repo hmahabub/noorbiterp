@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Add Items · {{ po.po_number }}{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-list-ul"></i> Add Items — {{ po.po_number }}</h1>
+  <a href="{% url 'purchase_orders:detail' po.pk %}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Back to PO
+  </a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0">Add an Item</h6>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-erp-primary mt-2 w-100">
+          <i class="bi bi-plus-lg"></i> Add to PO
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="erp-card">
+      <div class="table-responsive">
+        <table class="table erp-table mb-0">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="text-end">Qty</th>
+              <th class="text-end">Unit Price</th>
+              <th class="text-end">Line Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in line_items %}
+            <tr>
+              <td>{{ line.item.description }}<div class="text-muted small">{{ line.item.supplier_code }}</div></td>
+              <td class="text-end">{{ line.qty|floatformat:2 }}</td>
+              <td class="text-end">{{ line.unit_price|floatformat:4 }}</td>
+              <td class="text-end fw-semibold">{{ line.line_total|floatformat:2 }}</td>
+              <td class="text-end">
+                <a href="{% url 'purchase_orders:remove_item' po.pk line.pk %}" class="text-danger"
+                   data-confirm="Remove this item from the PO?">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No items added yet — use the form to add the first one.</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="3" class="text-end">Total</th>
+              <th class="text-end" id="po-running-total">{{ total_amount|floatformat:2 }}</th>
+              <th></th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    {% if line_items %}
+    <div class="d-flex justify-content-end mt-3">
+      <a href="{% url 'purchase_orders:detail' po.pk %}" class="btn btn-erp-primary">
+        <i class="bi bi-check2-circle"></i> Done — Review PO
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-fill the unit price from the selected item's default price as soon
+// as it's chosen (server still recalculates the authoritative line total).
+document.addEventListener('DOMContentLoaded', function () {
+  var itemSelect = document.getElementById('id_item');
+  var priceInput = document.getElementById('id_unit_price');
+
+  if (itemSelect) {
+    itemSelect.addEventListener('change', function () {
+      var opt = itemSelect.options[itemSelect.selectedIndex];
+      var price = opt.getAttribute('data-price');
+      if (price && priceInput) {
+        priceInput.value = price;
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

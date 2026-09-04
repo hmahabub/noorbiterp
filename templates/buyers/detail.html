@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ buyer.name }} · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-building"></i> {{ buyer.code }} — {{ buyer.name }}</h1>
+  <div>
+    <a href="{% url 'buyers:update' buyer.pk %}" class="btn btn-outline-primary">
+      <i class="bi bi-pencil"></i> Edit
+    </a>
+    <a href="{% url 'buyers:list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to list
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ performance.total_orders }}</div>
+      <div class="kpi-label">Total Orders</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ performance.running_orders }}</div>
+      <div class="kpi-label">Running Orders</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card kpi-green">
+      <div class="kpi-value">{{ performance.completed_orders }}</div>
+      <div class="kpi-label">Completed</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card kpi-red">
+      <div class="kpi-value">{{ performance.cancelled_orders }}</div>
+      <div class="kpi-label">Cancelled</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="erp-card p-4 mb-4">
+      <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">Country</dt>
+        <dd class="col-sm-8">{{ buyer.country }}{% if buyer.city %}, {{ buyer.city }}{% endif %}</dd>
+
+        <dt class="col-sm-4 text-muted">Brand</dt>
+        <dd class="col-sm-8">{{ buyer.brand|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Type / Category</dt>
+        <dd class="col-sm-8">{{ buyer.get_buyer_type_display }} / {{ buyer.get_category_display }}</dd>
+
+        <dt class="col-sm-4 text-muted">Status</dt>
+        <dd class="col-sm-8">
+          {% if buyer.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+        </dd>
+
+        <dt class="col-sm-4 text-muted">Currency</dt>
+        <dd class="col-sm-8">{{ buyer.currency }}</dd>
+
+        <dt class="col-sm-4 text-muted">Payment Terms</dt>
+        <dd class="col-sm-8">{{ buyer.payment_terms|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Incoterms</dt>
+        <dd class="col-sm-8">{{ buyer.incoterms|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Commission Rate</dt>
+        <dd class="col-sm-8">{{ buyer.commission_rate }}%</dd>
+
+        <dt class="col-sm-4 text-muted">Default Factory</dt>
+        <dd class="col-sm-8">{{ buyer.default_factory|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Remarks</dt>
+        <dd class="col-sm-8">{{ buyer.remarks|linebreaksbr|default:"—" }}</dd>
+      </dl>
+    </div>
+
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-person-lines-fill"></i> Contacts</h6>
+      {% if contacts %}
+        <div class="table-responsive">
+          <table class="table erp-table table-sm mb-0">
+            <thead><tr><th>Name</th><th>Designation</th><th>Email</th><th>Phone</th></tr></thead>
+            <tbody>
+              {% for c in contacts %}
+              <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.designation|default:"—" }}</td>
+                <td>{{ c.email|default:"—" }}</td>
+                <td>{{ c.phone|default:"—" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted small mb-0">No contacts added yet. Manage contacts from Django Admin.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="erp-card p-4 mb-4">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-geo-alt"></i> Ship-To Addresses</h6>
+      {% if ship_to_addresses %}
+        <ul class="list-group list-group-flush mb-3">
+          {% for st in ship_to_addresses %}
+          <li class="list-group-item px-0">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>{{ st.label }}</strong>
+                {% if st.is_default %}<span class="badge erp-badge-md ms-1">Default</span>{% endif %}
+                <div class="text-muted small">{{ st.full_address|default:"No address on file" }}</div>
+                {% if st.phone %}<div class="text-muted small">{{ st.phone }}</div>{% endif %}
+              </div>
+              <a href="{% url 'buyers:remove_ship_to' buyer.pk st.pk %}" class="text-danger"
+                 data-confirm="Remove this ship-to address?">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted small">No ship-to addresses yet — add one so orders can be routed.</p>
+      {% endif %}
+      <a href="{% url 'buyers:add_ship_to' buyer.pk %}" class="btn btn-sm btn-erp-primary w-100">
+        <i class="bi bi-plus-lg"></i> Add Ship-To Address
+      </a>
+    </div>
+
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-paperclip"></i> Attached Documents</h6>
+      {% if documents %}
+        <ul class="list-group list-group-flush">
+          {% for doc in documents %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <a href="{{ doc.file.url }}" target="_blank">{{ doc.get_doc_type_display }}</a>
+            <a href="{% url 'documents:delete' doc.pk %}" class="text-danger" data-confirm="Remove this document?">
+              <i class="bi bi-trash"></i>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted small">No documents uploaded yet.</p>
+      {% endif %}
+      <a href="{% url 'documents:upload' content_type_id buyer.pk %}" class="btn btn-sm btn-erp-primary mt-3 w-100">
+        <i class="bi bi-upload"></i> Upload Document
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

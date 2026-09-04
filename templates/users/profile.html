@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}My Profile · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1><i class="bi bi-person-circle"></i> My Profile</h1>
+</div>
+
+<div class="erp-card p-4" style="max-width: 600px;">
+  <dl class="row mb-0">
+    <dt class="col-sm-4 text-muted">Username</dt>
+    <dd class="col-sm-8">{{ user.username }}</dd>
+
+    <dt class="col-sm-4 text-muted">Full name</dt>
+    <dd class="col-sm-8">{{ user.get_full_name|default:"—" }}</dd>
+
+    <dt class="col-sm-4 text-muted">Email</dt>
+    <dd class="col-sm-8">{{ user.email|default:"—" }}</dd>
+
+    <dt class="col-sm-4 text-muted">Department</dt>
+    <dd class="col-sm-8">{{ user.department|default:"—" }}</dd>
+
+    <dt class="col-sm-4 text-muted">Phone</dt>
+    <dd class="col-sm-8">{{ user.phone|default:"—" }}</dd>
+
+    <dt class="col-sm-4 text-muted">Role</dt>
+    <dd class="col-sm-8">
+      {% if user.is_md %}<span class="badge erp-badge-md">Managing Director</span>{% endif %}
+      {% if user.is_gm %}<span class="badge bg-secondary">General Manager</span>{% endif %}
+      {% if not user.is_md and not user.is_gm %}<span class="text-muted">Staff</span>{% endif %}
+    </dd>
+  </dl>
+</div>
+{% endblock %}

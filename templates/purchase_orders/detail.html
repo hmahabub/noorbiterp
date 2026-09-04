@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}{{ po.po_number }} · Garment ERP{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1>
+    <i class="bi bi-file-earmark-text"></i> {{ po.po_number }}
+    {% if po.status == 'draft' %}
+      <span class="badge bg-secondary">Draft</span>
+    {% elif po.status == 'pending_approval' %}
+      <span class="badge erp-badge-md">Pending Approval</span>
+    {% elif po.status == 'approved' %}
+      <span class="badge bg-success">Approved</span>
+    {% elif po.status == 'rejected' %}
+      <span class="badge bg-danger">Rejected</span>
+    {% endif %}
+  </h1>
+  <div>
+    {% if po.status == 'draft' %}
+      <a href="{% url 'purchase_orders:update' po.pk %}" class="btn btn-outline-primary">
+        <i class="bi bi-pencil"></i> Edit
+      </a>
+      <a href="{% url 'purchase_orders:add_item' po.pk %}" class="btn btn-outline-secondary">
+        <i class="bi bi-list-ul"></i> Manage Items
+      </a>
+      {% if po.can_submit %}
+        <form method="post" action="{% url 'purchase_orders:submit' po.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button class="btn btn-erp-primary" data-confirm="Submit {{ po.po_number }} for MD approval?">
+            <i class="bi bi-send-check"></i> Submit for Approval
+          </button>
+        </form>
+      {% endif %}
+    {% endif %}
+    {% if po.status == 'approved' %}
+      <a href="{% url 'purchase_orders:pdf' po.pk %}" target="_blank" class="btn btn-erp-primary">
+        <i class="bi bi-printer"></i> Print / Save as PDF
+      </a>
+    {% endif %}
+    <a href="{% url 'purchase_orders:list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to list
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="erp-card p-4 mb-4">
+      <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">To (Supplier)</dt>
+        <dd class="col-sm-8">{{ po.to_supplier }}</dd>
+
+        <dt class="col-sm-4 text-muted">Destination</dt>
+        <dd class="col-sm-8">{{ po.destination }}</dd>
+
+        <dt class="col-sm-4 text-muted">Season</dt>
+        <dd class="col-sm-8">{{ po.season|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Style</dt>
+        <dd class="col-sm-8">{{ po.style|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Customer PO No.</dt>
+        <dd class="col-sm-8">{{ po.customer_po_number|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Payment Method</dt>
+        <dd class="col-sm-8">{{ po.get_payment_method_display }}</dd>
+
+        <dt class="col-sm-4 text-muted">Delivery Date</dt>
+        <dd class="col-sm-8">{{ po.delivery_date|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Shipping Method</dt>
+        <dd class="col-sm-8">{{ po.shipping_method|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Note</dt>
+        <dd class="col-sm-8">{{ po.note|linebreaksbr|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Terms &amp; Conditions</dt>
+        <dd class="col-sm-8">{{ po.terms_and_conditions|linebreaksbr|default:"—" }}</dd>
+
+        <dt class="col-sm-4 text-muted">Created By</dt>
+        <dd class="col-sm-8">{{ po.created_by }} on {{ po.created_at|date:"d M Y, H:i" }}</dd>
+
+        {% if po.approved_by %}
+        <dt class="col-sm-4 text-muted">Approved By</dt>
+        <dd class="col-sm-8">{{ po.approved_by }} on {{ po.approved_at|date:"d M Y, H:i" }}</dd>
+        {% endif %}
+      </dl>
+    </div>
+
+    <div class="erp-card">
+      <div class="table-responsive">
+        <table class="table erp-table mb-0">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Size / Color</th>
+              <th>Unit</th>
+              <th class="text-end">Qty</th>
+              <th class="text-end">Unit Price</th>
+              <th class="text-end">Line Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in line_items %}
+            <tr>
+              <td>{{ line.item.description }}<div class="text-muted small">{{ line.item.supplier_code }}</div></td>
+              <td>{{ line.item.size|default:"—" }} / {{ line.item.color|default:"—" }}</td>
+              <td>{{ line.item.get_unit_display }}</td>
+              <td class="text-end">{{ line.qty|floatformat:2 }}</td>
+              <td class="text-end">{{ line.unit_price|floatformat:4 }}</td>
+              <td class="text-end">{{ line.line_total|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-4">No items added yet.</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th colspan="5" class="text-end">Total</th>
+              <th class="text-end">{{ total_amount|floatformat:2 }}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="erp-card p-4">
+      <h6 class="erp-section-title mt-0"><i class="bi bi-paperclip"></i> Attached Documents</h6>
+      {% if documents %}
+        <ul class="list-group list-group-flush">
+          {% for doc in documents %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <a href="{{ doc.file.url }}" target="_blank">{{ doc.get_doc_type_display }}</a>
+            <a href="{% url 'documents:delete' doc.pk %}" class="text-danger" data-confirm="Remove this document?">
+              <i class="bi bi-trash"></i>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted small">No documents uploaded yet.</p>
+      {% endif %}
+      <a href="{% url 'documents:upload' content_type_id po.pk %}" class="btn btn-sm btn-erp-primary mt-3 w-100">
+        <i class="bi bi-upload"></i> Upload Document
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
