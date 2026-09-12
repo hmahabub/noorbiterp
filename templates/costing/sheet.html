@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Costing Sheet · {{ order_item.item.buyer_style }}{% endblock %}
+
+{% block content %}
+<div class="erp-page-header">
+  <h1>
+    <i class="bi bi-calculator"></i> Costing Sheet — {{ order_item.item.buyer_style }}
+    <span class="badge bg-secondary">v{{ sheet.version }}</span>
+  </h1>
+  <div>
+    <a href="{% url 'costing:print' sheet.pk %}" target="_blank" class="btn btn-outline-secondary">
+      <i class="bi bi-printer"></i> Print / PDF
+    </a>
+    <a href="{% url 'costing:excel' sheet.pk %}" class="btn btn-outline-secondary">
+      <i class="bi bi-file-earmark-excel"></i> Excel
+    </a>
+    <a href="{% url 'orders:detail' order_item.order.pk %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Order
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ total_cost|floatformat:4 }}</div>
+      <div class="kpi-label">FOB Cost / Unit</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ order_item.unit_price|floatformat:4 }}</div>
+      <div class="kpi-label">Order Unit Price</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card {% if margin_per_unit >= 0 %}kpi-green{% else %}kpi-red{% endif %}">
+      <div class="kpi-value">{{ margin_per_unit|floatformat:4 }}</div>
+      <div class="kpi-label">Margin / Unit ({{ margin_percent|floatformat:1 }}%)</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="erp-card kpi-card">
+      <div class="kpi-value">{{ total_for_order_qty|floatformat:2 }}</div>
+      <div class="kpi-label">Total Cost (Order Qty)</div>
+    </div>
+  </div>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="costingTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview-pane" type="button" role="tab">
+      <i class="bi bi-info-circle"></i> Overview
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials-pane" type="button" role="tab">
+      <i class="bi bi-box-seam"></i> Materials
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="charges-tab" data-bs-toggle="tab" data-bs-target="#charges-pane" type="button" role="tab">
+      <i class="bi bi-cash-coin"></i> Cost &amp; Charges
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="costingTabsContent">
+
+  {# ============================= OVERVIEW ============================= #}
+  <div class="tab-pane fade show active" id="overview-pane" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="erp-card p-4 mb-3">
+          <h6 class="erp-section-title mt-0">Style &amp; Order Info</h6>
+          <dl class="row mb-0 small">
+            <dt class="col-sm-4 text-muted">Style</dt>
+            <dd class="col-sm-8">{{ finished_item.buyer_style }} — {{ finished_item.description }}</dd>
+
+            <dt class="col-sm-4 text-muted">Content</dt>
+            <dd class="col-sm-8">{{ finished_item.content|default:"—" }}</dd>
+
+            <dt class="col-sm-4 text-muted">Finish</dt>
+            <dd class="col-sm-8">{{ finished_item.finish|default:"—" }}</dd>
+
+            <dt class="col-sm-4 text-muted">Buyer</dt>
+            <dd class="col-sm-8">{{ order.buyer }}</dd>
+
+            <dt class="col-sm-4 text-muted">Buyer PO No.</dt>
+            <dd class="col-sm-8">{{ order.buyer_order_number|default:"—" }}</dd>
+
+            <dt class="col-sm-4 text-muted">Our Order No.</dt>
+            <dd class="col-sm-8">{{ order.our_order_number }}</dd>
+
+            <dt class="col-sm-4 text-muted">Ship To</dt>
+            <dd class="col-sm-8">{{ order.ship_to|default:"—" }}</dd>
+
+            <dt class="col-sm-4 text-muted">Factory</dt>
+            <dd class="col-sm-8">{{ order.factory|default:"Not yet assigned" }}</dd>
+
+            <dt class="col-sm-4 text-muted">Required Ship Date</dt>
+            <dd class="col-sm-8">{{ order.required_ship_date|default:"—" }}</dd>
+
+            <dt class="col-sm-4 text-muted">Order Qty / Pack</dt>
+            <dd class="col-sm-8">{{ order_item.qty }} &middot; Pack {{ order_item.pack }}</dd>
+
+            <dt class="col-sm-4 text-muted">Currency</dt>
+            <dd class="col-sm-8">{{ sheet.currency }}</dd>
+
+            <dt class="col-sm-4 text-muted">Status</dt>
+            <dd class="col-sm-8">{{ sheet.get_status_display }}</dd>
+
+            <dt class="col-sm-4 text-muted">Created</dt>
+            <dd class="col-sm-8">{{ sheet.created_at|date:"d M Y, H:i" }}</dd>
+          </dl>
+        </div>
+
+        <div class="erp-card p-3">
+          <h6 class="erp-section-title mt-0 mb-2">Other Versions</h6>
+          {% if other_versions %}
+          <ul class="list-unstyled mb-0 small">
+            {% for v in other_versions %}
+            <li><a href="{% url 'costing:sheet' v.pk %}">v{{ v.version }} — {{ v.get_status_display }} ({{ v.total_cost|floatformat:4 }})</a></li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted small mb-0">No other versions yet.</p>
+          {% endif %}
+          <form method="post" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="new_version">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" data-confirm="Start a new blank costing sheet version for this order line?">
+              <i class="bi bi-files"></i> New Version
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="erp-card">
+          <div class="p-2 px-3" style="background:var(--erp-navy); color:#fff; border-radius:.5rem .5rem 0 0;">
+            <strong>Cost Structure</strong>
+          </div>
+          <div class="table-responsive">
+            <table class="table erp-table table-sm mb-0">
+              <thead>
+                <tr><th>Category</th><th class="text-end">Amount</th><th class="text-end">% of FOB</th></tr>
+              </thead>
+              <tbody>
+                {% for row in category_summary %}
+                <tr>
+                  <td>{{ row.label }}</td>
+                  <td class="text-end">{{ row.amount|floatformat:4 }}</td>
+                  <td class="text-end">
+                    {% if total_cost %}{% widthratio row.amount total_cost 100 %}%{% else %}—{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>FOB TOTAL</th>
+                  <th class="text-end">{{ total_cost|floatformat:4 }}</th>
+                  <th class="text-end">100%</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ============================= MATERIALS ============================= #}
+  <div class="tab-pane fade" id="materials-pane" role="tabpanel">
+    <div class="d-flex justify-content-end mb-2">
+      <button type="button" class="btn btn-erp-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+        <i class="bi bi-plus-lg"></i> Add Component
+      </button>
+    </div>
+    {% include "costing/_category_groups.html" with groups=material_groups %}
+  </div>
+
+  {# ========================== COST & CHARGES ========================== #}
+  <div class="tab-pane fade" id="charges-pane" role="tabpanel">
+    <div class="d-flex justify-content-end mb-2">
+      <button type="button" class="btn btn-erp-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+        <i class="bi bi-plus-lg"></i> Add Component
+      </button>
+    </div>
+    {% include "costing/_category_groups.html" with groups=charge_groups %}
+  </div>
+
+</div>
+
+{# ======================= ADD COMPONENT MODAL ========================= #}
+<div class="modal fade" id="addComponentModal" tabindex="-1" aria-labelledby="addComponentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addComponentModalLabel"><i class="bi bi-plus-lg"></i> Add a Component</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" novalidate id="addComponentForm">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_line">
+          <div class="form-grid">
+            {{ form|crispy }}
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" form="addComponentForm" class="btn btn-erp-primary">
+          <i class="bi bi-plus-lg"></i> Add to Sheet
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="erp-card p-3 d-flex justify-content-between align-items-center mt-3" style="background: var(--erp-navy); color: #fff;">
+  <strong>FOB TOTAL</strong>
+  <strong style="font-size: 1.2rem;">{{ total_cost|floatformat:4 }} {{ sheet.currency }}</strong>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  function wireAutoCost(root) {
+    var priceInput = root.querySelector('.bom-unit-price');
+    var consumptionInput = root.querySelector('.bom-consumption');
+    var wastageInput = root.querySelector('.bom-wastage');
+    var costInput = root.querySelector('.bom-cost');
+    if (!priceInput || !consumptionInput || !costInput) return;
+
+    function recalc() {
+      var price = parseFloat(priceInput.value);
+      var consumption = parseFloat(consumptionInput.value);
+      var wastage = parseFloat(wastageInput ? wastageInput.value : 0) || 0;
+      if (!isNaN(price) && !isNaN(consumption)) {
+        var cost = price * consumption * (1 + wastage / 100);
+        costInput.value = cost.toFixed(4);
+      }
+    }
+    [priceInput, consumptionInput, wastageInput].forEach(function (el) {
+      if (el) el.addEventListener('input', recalc);
+    });
+  }
+
+  document.querySelectorAll('form').forEach(wireAutoCost);
+
+  // Remember which tab was active across a form submit/redirect (each tab
+  // has its own forms, so losing the active tab on save is jarring).
+  var tabButtons = document.querySelectorAll('#costingTabs button[data-bs-toggle="tab"]');
+  var storageKey = 'costingSheetActiveTab_{{ sheet.pk }}';
+
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener('shown.bs.tab', function (e) {
+      sessionStorage.setItem(storageKey, e.target.id);
+    });
+  });
+
+  var savedTabId = sessionStorage.getItem(storageKey);
+  if (savedTabId) {
+    var savedTab = document.getElementById(savedTabId);
+    if (savedTab) {
+      var tab = new bootstrap.Tab(savedTab);
+      tab.show();
+    }
+  }
+});
+</script>
+{% endblock %}

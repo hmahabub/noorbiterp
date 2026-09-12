@@ -85,17 +85,32 @@ Item.objects.get_or_create(
                   unit_price="0.0150", unit="pcs", supplier=fabric_supplier)
 )
 
-from apps.costing.models import StandardBOMLine
+from apps.costing.models import CostingLine, CostingSheet
 
-# Standard BOM for the WS806G318 style — the "standard" recipe that gets
-# cloned (and qty-scaled) onto every order line for this style.
-StandardBOMLine.objects.get_or_create(
-    finished_item=finished_item, item=Item.objects.get(supplier_code="FB-CTN-001"),
-    defaults=dict(category="fabric", consumption="1.2500", unit="mtr", wastage_percent="5.00", unit_price="3.2500")
+# A costing sheet for the WC6824 order line — one unified BOM + Costing
+# interface per order line, matching a real buying-house cost sheet.
+costing_sheet, _ = CostingSheet.objects.get_or_create(
+    order_item=order_item, version=1, defaults=dict(currency="USD")
 )
-StandardBOMLine.objects.get_or_create(
-    finished_item=finished_item, item=Item.objects.get(supplier_code="TR-BTN-014"),
-    defaults=dict(category="trims", consumption="6", unit="pcs", wastage_percent="2.00", unit_price="0.0150")
-)
+costing_lines = [
+    dict(category="fabric", component_name="Fabric 1", description="100% Cotton Jersey 180gsm",
+         supplier_info="Silk Route Fabrics Ltd.", unit_price="3.2500", consumption="1.2500",
+         wastage_percent="5.00", cost="4.2656"),
+    dict(category="trims", component_name="Button", description="4-hole Poly Button 15L",
+         supplier_info="Silk Route Fabrics Ltd.", unit_price="0.0150", consumption="6",
+         wastage_percent="2.00", cost="0.0918"),
+    dict(category="labels_packing", component_name="Main Label", description="Woven main + size label",
+         supplier_info="ADZI", unit_price="0.0250", consumption="2", wastage_percent="5.00", cost="0.0525"),
+    dict(category="cm", component_name="CM", description="Cut, Make, Trim (sewing & packing)",
+         supplier_info="Padma Garments Ltd.", cost="1.1000"),
+    dict(category="commercial_charges", component_name="Commercial Charges",
+         description="Documentation + handling + transport", cost="0.1000"),
+    dict(category="profit_margin", component_name="Profit Margin", cost="0.1200"),
+]
+for data in costing_lines:
+    CostingLine.objects.get_or_create(
+        costing_sheet=costing_sheet, component_name=data["component_name"],
+        defaults={k: v for k, v in data.items() if k != "component_name"}
+    )
 
 print("Seed data created.")

@@ -40,14 +40,6 @@ class Order(models.Model):
     def __str__(self):
         return self.our_order_number or f"Order (unsaved) #{self.pk}"
 
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
-        if is_new and not self.our_order_number:
-            # Needs the primary key first: ORD-<year>-<id>, e.g. ORD-2026-00042
-            self.our_order_number = f"ORD-{timezone.now().year}-{self.pk:05d}"
-            super().save(update_fields=["our_order_number"])
-
     @property
     def our_order_number(self):
         return f"ORD-{self.created_at.year}-{self.pk:05d}"
@@ -74,16 +66,6 @@ class Order(models.Model):
     @property
     def total_qty(self):
         return self.items.aggregate(total=models.Sum("qty"))["total"] or 0
-
-    @property
-    def total_bom_cost(self):
-        """Sum of every order line's material cost — an order-level rollup
-        of the order-wise BOM & costing."""
-        return sum((oi.total_bom_cost for oi in self.items.all()), Decimal("0"))
-
-    @property
-    def estimated_margin(self):
-        return self.total_amount - self.total_bom_cost
 
 
 class OrderItem(models.Model):
@@ -123,6 +105,10 @@ class OrderItem(models.Model):
         detail page so zero-qty placeholder rows don't clutter the summary."""
         return self.breakdown.filter(qty__gt=0).select_related("variant")
 
+    @property
+    def latest_costing_sheet(self):
+        return self.costing_sheets.order_by("-version").first()
+
     def ensure_variant_rows(self):
         """Auto-provisions a qty=0 OrderItemBreakdown row for every active
         color/size variant of this style, so the size-curve grid always has
@@ -135,34 +121,6 @@ class OrderItem(models.Model):
             OrderItemBreakdown(order_item=self, variant=variant, qty=0, unit_price=self.unit_price)
             for variant in missing
         ])
-
-    def ensure_bom_lines(self):
-        """Clones any standard BOM lines (from the Finished Item) that
-        aren't already on this order line yet, so the order-wise BOM always
-        starts from the style's standard recipe. Idempotent and additive —
-        already-cloned/edited lines are left untouched, and any new standard
-        materials added later get picked up on the next visit."""
-        from apps.costing.models import OrderItemBOMLine
-
-        existing_item_ids = set(self.bom_lines.values_list("item_id", flat=True))
-        missing = self.item.bom_lines.exclude(item_id__in=existing_item_ids)
-        OrderItemBOMLine.objects.bulk_create([
-            OrderItemBOMLine(
-                order_item=self, category=std.category, item=std.item,
-                consumption=std.consumption, unit=std.unit,
-                wastage_percent=std.wastage_percent, unit_price=std.unit_price,
-            )
-            for std in missing
-        ])
-
-    @property
-    def total_bom_cost(self):
-        from decimal import Decimal
-        return sum((line.line_cost for line in self.bom_lines.all()), Decimal("0"))
-
-    @property
-    def estimated_margin(self):
-        return self.line_total - self.total_bom_cost
 
     def breakdown_matrix(self):
         """Builds the color (rows) x size (columns) grid: {'sizes': [...],

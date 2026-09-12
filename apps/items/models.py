@@ -61,14 +61,6 @@ class FinishedItem(models.Model):
     def __str__(self):
         return f"{self.buyer_style} — {self.description}"
 
-    @property
-    def standard_bom_cost(self):
-        """Total standard material cost to make 1 unit — sum of every
-        StandardBOMLine's line_cost. Compare against `unit_price` (the FOB
-        price) to see the implied margin before CM/overhead."""
-        from decimal import Decimal
-        return sum((line.line_cost for line in self.bom_lines.all()), Decimal("0"))
-
 
 class FinishedItemVariant(models.Model):
     """A specific color/size of a FinishedItem — what actually gets ordered
@@ -77,6 +69,8 @@ class FinishedItemVariant(models.Model):
     SIZE_CHOICES = [
         ("XS", "XS"), ("S", "S"), ("M", "M"), ("L", "L"), ("XL", "XL"),
         ("XXL", "XXL"), ("XXXL", "XXXL"),
+        ("28", "28"), ("30", "30"), ("32", "32"), ("34", "34"), ("36", "36"),
+        ("38", "38"), ("40", "40"), ("42", "42"), ("44", "44"),
     ]
     STATUS_CHOICES = [
         ("draft", "Draft"), ("active", "Active"), ("discontinued", "Discontinued"),

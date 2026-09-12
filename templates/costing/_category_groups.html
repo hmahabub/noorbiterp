@@ -1,0 +1,70 @@
+{% load crispy_forms_tags %}
+{% for group in groups %}
+<div class="erp-card mb-3">
+  <div class="p-2 px-3 d-flex justify-content-between align-items-center" style="background:var(--erp-navy); color:#fff; border-radius: .5rem .5rem 0 0;">
+    <strong>{{ group.label }}</strong>
+    <span>{{ group.subtotal|floatformat:4 }}</span>
+  </div>
+  {% if group.lines %}
+  <div class="table-responsive">
+    <table class="table erp-table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Description</th>
+          <th>Supplier</th>
+          <th class="text-end">Unit Price</th>
+          <th class="text-end">Consumption</th>
+          <th class="text-end">Wastage %</th>
+          <th class="text-end">Cost</th>
+          <th class="text-end">% of FOB</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in group.lines %}
+        <tr>
+          <td colspan="9" class="p-0 border-0">
+            <details>
+              <summary class="p-2" style="cursor:pointer;list-style:none;">
+                <table class="w-100 mb-0" style="table-layout:fixed;">
+                  <tr>
+                    <td style="width:14%">{{ line.component_name }}</td>
+                    <td style="width:20%" class="text-muted small">{{ line.description|default:"—" }}</td>
+                    <td style="width:13%" class="text-muted small">{{ line.supplier_info|default:"—" }}</td>
+                    <td style="width:10%" class="text-end">{{ line.unit_price|default_if_none:"—" }}</td>
+                    <td style="width:10%" class="text-end">{{ line.consumption|default_if_none:"—" }}</td>
+                    <td style="width:9%" class="text-end">{{ line.wastage_percent|floatformat:2 }}%</td>
+                    <td style="width:10%" class="text-end fw-semibold">{{ line.cost|floatformat:4 }}</td>
+                    <td style="width:9%" class="text-end">{{ line.part_of_price|floatformat:1 }}%</td>
+                    <td style="width:5%" class="text-end">
+                      <i class="bi bi-pencil-square"></i>
+                      <a href="{% url 'costing:delete_line' line.pk %}" class="text-danger ms-1"
+                         data-confirm="Remove this line?" onclick="event.stopPropagation();">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </summary>
+              <form method="post" class="d-flex align-items-end flex-wrap gap-2 p-3" style="background:#f8fafc;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_line">
+                <input type="hidden" name="line_id" value="{{ line.pk }}">
+                {{ line.edit_form|crispy }}
+                <button type="submit" class="btn btn-sm btn-erp-primary mb-3">
+                  <i class="bi bi-check-lg"></i> Save
+                </button>
+              </form>
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted small p-3 mb-0">No {{ group.label|lower }} lines yet.</p>
+  {% endif %}
+</div>
+{% endfor %}

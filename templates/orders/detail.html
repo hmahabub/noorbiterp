@@ -21,7 +21,7 @@
 </div>
 
 <div class="row g-4">
-  <div class="col-lg-8">
+  <div class="col-lg-4">
     <div class="erp-card p-4 mb-4">
       <dl class="row mb-0">
         <dt class="col-sm-4 text-muted">Buyer</dt>
@@ -62,6 +62,10 @@
       </dl>
     </div>
 
+    
+  </div>
+
+  <div class="col-lg-8">
     {% for oi in order_items %}
     <div class="erp-card mb-3">
       <div class="p-3 d-flex justify-content-between align-items-center" style="border-bottom:1px solid var(--erp-card-border);">
@@ -78,8 +82,8 @@
           <a href="{% url 'orders:add_item' order.pk %}#item-{{ oi.pk }}" class="btn btn-sm btn-outline-secondary ms-2">
             <i class="bi bi-palette"></i> Manage Quantities
           </a>
-          <a href="{% url 'costing:order_item_bom' oi.pk %}" class="btn btn-sm btn-outline-primary ms-1">
-            <i class="bi bi-diagram-3"></i> BOM &amp; Costing
+          <a href="{% url 'costing:order_item_costing' oi.pk %}" class="btn btn-sm btn-outline-primary ms-1">
+            <i class="bi bi-calculator"></i> Costing Sheet
           </a>
         </div>
       </div>
@@ -116,34 +120,9 @@
     <div class="erp-card p-3 d-flex justify-content-end">
       <div class="text-end">
         <div class="text-muted small">Total Qty: {{ total_qty }}</div>
-        <div class="text-muted small">Material Cost: {{ order.total_bom_cost|floatformat:2 }} · Est. Margin: {{ order.estimated_margin|floatformat:2 }}</div>
         <div class="fw-bold" style="color: var(--erp-navy); font-size: 1.1rem;">Total: {{ total_amount|floatformat:2 }} {{ order.currency }}</div>
       </div>
     </div>
     {% endif %}
-  </div>
-
-  <div class="col-lg-4">
-    <div class="erp-card p-4">
-      <h6 class="erp-section-title mt-0"><i class="bi bi-paperclip"></i> Attached Documents</h6>
-      {% if documents %}
-        <ul class="list-group list-group-flush">
-          {% for doc in documents %}
-          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-            <a href="{{ doc.file.url }}" target="_blank">{{ doc.get_doc_type_display }}</a>
-            <a href="{% url 'documents:delete' doc.pk %}" class="text-danger" data-confirm="Remove this document?">
-              <i class="bi bi-trash"></i>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="text-muted small">No documents uploaded yet.</p>
-      {% endif %}
-      <a href="{% url 'documents:upload' content_type_id order.pk %}" class="btn btn-sm btn-erp-primary mt-3 w-100">
-        <i class="bi bi-upload"></i> Upload Document
-      </a>
-    </div>
-  </div>
 </div>
 {% endblock %}

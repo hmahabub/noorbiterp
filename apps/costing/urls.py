@@ -11,11 +11,10 @@ urlpatterns = [
     path('<int:pk>/edit/', views.CostingUpdateView.as_view(), name='update'),
     path('<int:pk>/delete/', views.CostingDeleteView.as_view(), name='delete'),
 
-    # Standard BOM & Costing (per Finished Item)
-    path('standard/<int:finished_item_pk>/', views.FinishedItemBOMView.as_view(), name='standard_bom'),
-    path('standard/<int:finished_item_pk>/remove/<int:pk>/', views.delete_standard_bom_line, name='remove_standard_bom_line'),
-
-    # Order-wise BOM & Costing (per Order line)
-    path('order-item/<int:order_item_pk>/', views.OrderItemBOMView.as_view(), name='order_item_bom'),
-    path('order-item/<int:order_item_pk>/remove/<int:pk>/', views.delete_order_item_bom_line, name='remove_order_item_bom_line'),
+    # Unified BOM + Costing interface
+    path('order-item/<int:order_item_pk>/', views.open_order_item_costing, name='order_item_costing'),
+    path('sheet/<int:pk>/', views.CostingSheetView.as_view(), name='sheet'),
+    path('sheet/<int:pk>/print/', views.print_costing_sheet, name='print'),
+    path('sheet/<int:pk>/excel/', views.download_costing_excel, name='excel'),
+    path('line/<int:pk>/delete/', views.delete_costing_line, name='delete_line'),
 ]

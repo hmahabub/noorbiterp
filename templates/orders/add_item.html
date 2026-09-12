@@ -69,8 +69,8 @@
       {% else %}
         <span class="badge bg-warning text-dark grid-balance-badge">Breakdown {{ oi.breakdown_qty }} / {{ oi.qty }}</span>
       {% endif %}
-      <a href="{% url 'costing:order_item_bom' oi.pk %}" class="btn btn-sm btn-outline-primary ms-2">
-        <i class="bi bi-diagram-3"></i> BOM &amp; Costing
+      <a href="{% url 'costing:order_item_costing' oi.pk %}" class="btn btn-sm btn-outline-primary ms-2">
+        <i class="bi bi-calculator"></i> Costing Sheet
       </a>
       <a href="{% url 'orders:remove_item' order.pk oi.pk %}" class="text-danger ms-2"
          data-confirm="Remove this item and its color/size breakdown from the order?">

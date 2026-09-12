@@ -46,17 +46,20 @@ and Monthly Reports — all reachable from a single top navbar.
   size, auto-generated SKU) — distinct from the raw material/trim `Item` catalogue used on
   Purchase Orders. Buyers can now have multiple **ship-to addresses**
   (`apps/buyers` → `BuyerShipTo`), managed from the buyer detail page.
-- **BOM & Costing** (`apps/costing` → `StandardBOMLine`, `OrderItemBOMLine`), added on top of the
-  existing aggregate `CostingSheet`: every `FinishedItem` gets a **standard BOM** — one row per
-  raw material (Category, Item, Consumption per unit, Unit, Wastage %, Total Qty, Unit Price,
-  Line Cost) — reachable from the Finished Item page as "Standard BOM & Costing". This standard
-  recipe is the template: opening any order line's **"BOM & Costing"** page (from the order
-  detail page or the size-grid page) auto-clones it, scaling Total Qty by that line's order
-  qty so it becomes the actual procurement requirement for that specific order — independently
-  editable afterwards without touching the standard. Both pages use the same add-row +
-  inline-edit (click to expand) + delete pattern as the rest of the app, with live cost/margin
-  KPIs (standard cost vs. reference FOB price at the style level; material cost vs. revenue at
-  the order-line level, rolled up to an order-level estimated margin on the order detail page).
+- **BOM & Costing** (`apps/costing` → `CostingSheet`, `CostingLine`) — a single unified cost
+  sheet per order line, matching a real buying-house costing format: components grouped into
+  Fabric / Trims / Labels & Packing / Embellishment / CM / Washing / Test Cost / Commercial
+  Charges / Profit Margin, each with Component, Description, Supplier Info, Unit Price,
+  Consumption, Wastage %, and Cost. Reachable as **"Costing Sheet"** from the order detail
+  page or the size-grid page — jumps straight to the latest version for that line (creating
+  v1 automatically the first time). `Cost` is always a plain editable field: JS suggests
+  `unit_price x consumption x (1 + wastage%)` live as you type for material rows, while rows
+  like CM or Profit Margin (which have no unit price/consumption in a real sheet) are simply
+  typed in directly — same add-row + inline-edit (click to expand) + delete pattern as the
+  rest of the app. Category subtotals and an FOB grand total roll up live, alongside
+  order-line KPIs (FOB cost/unit vs. order unit price → margin/unit, and total cost across
+  the full order qty). A **"New Version"** button starts a fresh blank sheet for re-costing
+  without disturbing earlier versions, which stay listed and one click away.
 - **Purchase Orders** (`apps/purchase_orders`): PO header (To/Destination suppliers, season,
   style, customer PO number, payment method, delivery date, shipping method, notes, terms &
   conditions) with an auto-generated `PO-<year>-<id>` number. Creating a PO routes straight

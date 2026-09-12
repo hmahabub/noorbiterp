@@ -11,9 +11,6 @@
     <a href="{% url 'items:finished_add_variant' finished_item.pk %}" class="btn btn-erp-primary">
       <i class="bi bi-plus-lg"></i> Manage Variants
     </a>
-    <a href="{% url 'costing:standard_bom' finished_item.pk %}" class="btn btn-outline-primary">
-      <i class="bi bi-diagram-3"></i> Standard BOM &amp; Costing
-    </a>
     <a href="{% url 'items:finished_list' %}" class="btn btn-outline-secondary">
       <i class="bi bi-arrow-left"></i> Back to list
     </a>
@@ -41,12 +38,6 @@
 
         <dt class="col-sm-4 text-muted">Unit Price</dt>
         <dd class="col-sm-8">{{ finished_item.unit_price }}</dd>
-
-        <dt class="col-sm-4 text-muted">Standard BOM Cost</dt>
-        <dd class="col-sm-8">
-          {{ finished_item.standard_bom_cost|floatformat:4 }}
-          <a href="{% url 'costing:standard_bom' finished_item.pk %}" class="ms-2 small">view / edit</a>
-        </dd>
       </dl>
     </div>
   </div>
